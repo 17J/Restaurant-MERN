@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: backend-container
-          image: 17rj/backend-resrestaurant-mern # Replace with your backend image
+          image: 17rj/backend-restaurant-mern # Replace with your backend image
           ports:
             - containerPort: 5000 # Your backend server port
           env:
