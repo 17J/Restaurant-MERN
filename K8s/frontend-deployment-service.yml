@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: frontend-container
-          image: 17rj/frontend-resrestaurant-mern # Replace with your frontend image
+          image: 17rj/frontend-restaurant-mern # Replace with your frontend image
           ports:
             - containerPort: 3000 # Assuming your React app runs on port 3000
           env:
