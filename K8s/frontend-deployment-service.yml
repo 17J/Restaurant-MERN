@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-deployment
+  # namespace: <your-namespace> # Replace with your namespace
+  labels:
+    app: frontend
+spec:
+  replicas: 2 # Adjust as needed
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend-container
+          image: 17rj/frontend-resrestaurant-mern # Replace with your frontend image
+          ports:
+            - containerPort: 3000 # Assuming your React app runs on port 3000
+          env:
+            - name: VITE_API_URL
+              value: "http://backend-service:5000/api"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  # namespace: <your-namespace> # Replace with your namespace
+  labels:
+    app: frontend
+spec:
+  selector:
+    app: frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+  type: ClusterIP # Accessible only within the cluster
