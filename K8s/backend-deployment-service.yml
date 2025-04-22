@@ -26,7 +26,7 @@ spec:
             - name: PORT
               value: "5000"
             - name: MONGO_URI
-              value: "mongodb://mongo:27017/"
+              value: "mongodb://mongo-service:27017/"
             - name: JWT_SECRET
               value: "eyJhbGciOiJIUzI1NiJ9.eyJSb2xlIjoiQWRtaW4iLCJJc3N1ZXIiOiJJc3N1ZXIiLCJVc2VybmFtZSI6IkphdmFJblVzZSIsImV4cCI6MTc0NDg2NjA3NCwiaWF0IjoxNzQ0ODY2MDc0fQ.fsUmxSXP_tEYjmV6d_-wcykDeLRUd2bThNEOBb7NhcU"
             - name: JWT_EXPIRES_IN
