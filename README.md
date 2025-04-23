@@ -1,19 +1,20 @@
-# Task-Manager-App
+# Ecommerce-Application
 
-Task-Manager-App is an advanced Project.
+Ecommerce-Application MERN stack Based.
 
 ## Used technologies:
 
-- Spring Boot
-- Spring MVC
-- Spring Data JPA
-- Hibernate
-- MySQL
-- Thymeleaf
-- React JS
-- Vite
-- Tailwind css
-- HTML/ CSS
+    - React
+    - Redux
+    - React Router
+    - Axios
+    - Styled-components
+    - Node.js
+    - Express.js
+    - MongoDB
+    - Mongoose
+    - npm
+    - nginx
 
 # Project View:
 
@@ -21,10 +22,10 @@ Some Screenshots of this project are given below
 <br />
 
 <p align="center">
-    <img src="snapshot/taskmanager.jpg"/>
-    <img src="snapshot/taskmanager1.jpg"/>
-    <img src="snapshot/taskmanager2.jpg"/>
-    <img src="snapshot/taskmanager3.jpg"/>
+    <img src="snapshot/rest_login.jpg"/>
+    <img src="snapshot/resta_menu.jpg"/>
+    <img src="snapshot/resta_register.jpg"/>
+    <img src="snapshot/restra.jpg"/>
 </p>
 
 # Have a nice day
