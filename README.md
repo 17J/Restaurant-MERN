@@ -1,6 +1,6 @@
-# Ecommerce-Application
+# Restaurant-Application
 
-Ecommerce-Application MERN stack Based.
+Restaurant-Application MERN stack Based.
 
 ## Used technologies:
 
