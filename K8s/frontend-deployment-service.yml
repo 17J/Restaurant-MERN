@@ -6,7 +6,7 @@ metadata:
   labels:
     app: frontend
 spec:
-  replicas: 2 # Adjust as needed
+  replicas: 1 # Adjust as needed
   selector:
     matchLabels:
       app: frontend
