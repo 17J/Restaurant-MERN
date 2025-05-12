@@ -6,6 +6,10 @@ name: MERN stack
 on:
   push:
     branches: [ "main" ]
+    
+permissions:
+  id-token: write  # 👈 Required for Azure OIDC login
+  contents: read
 
 
 jobs:
@@ -56,4 +60,91 @@ jobs:
         docker build -t 17rj/backend-restaurant-mern  server/
         echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
         docker push 17rj/backend-restaurant-mern
+ 
+ # This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
+
+name: MERN stack
+
+on:
+  push:
+    branches: [ "main" ]
+    
+permissions:
+  id-token: write  # 👈 Required for Azure OIDC login
+  contents: read
+
+
+jobs:
+ frontend-build:
+
+    runs-on: self-hosted
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18
+        cache: 'npm'
+        cache-dependency-path: client/package-lock.json
+    - name: Install and Build React App
+      working-directory: client
+      run: |
+        npm ci  # 👈 More reliable for production builds
+        npm run build
+
+    - name: Docker Build and Push (Client)
+      run: |
+        docker build -t 17rj/frontend-restaurant-mern  client/
+        echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+        docker push 17rj/frontend-restaurant-mern
+ 
+ backend-build:
+    needs: frontend-build
+    runs-on: self-hosted
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18
+        cache: 'npm'
+        cache-dependency-path: server/package-lock.json
+    - name: Install and Build React App
+      working-directory: server
+      run: |
+        npm ci  # 👈 More reliable for production builds
+        
+
+    - name: Docker Build and Push (Client)
+      run: |
+        docker build -t 17rj/backend-restaurant-mern  server/
+        echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+        docker push 17rj/backend-restaurant-mern
+ 
+   deploy-k8s-aks:
+    needs: backend-build
+    runs-on: self-hosted
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Azure login via OIDC
+      uses: azure/login@v1.4.6
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+    - name: Set AKS context
+      uses: azure/aks-set-context@v3
+      with:
+        resource-group: devopsgihub
+        cluster-name: devmern
+
+    - name: Deploy Kubernetes Manifests
+      run: |
+        kubectl apply -f K8s/
+        sleep 20
  
