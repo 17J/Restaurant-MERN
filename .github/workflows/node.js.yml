@@ -49,7 +49,7 @@ jobs:
       working-directory: server
       run: |
         npm ci  # 👈 More reliable for production builds
-        npm run build
+        
 
     - name: Docker Build and Push (Client)
       run: |
