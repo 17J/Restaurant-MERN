@@ -1,0 +1,86 @@
+stages:          # List of stages for jobs, and their order of execution
+  - install_tools
+  - test
+  - docker_image_build
+  - deploy_aks_cluster
+
+variables:
+  KUBE_NAMESPACE: default
+  AKS_RESOURCE_GROUP: gitlab
+  AKS_CLUSTER_NAME: dev
+
+build-job:       # This job runs in the build stage, which runs first.
+  stage: install_tools
+  script:
+    - echo "Installing tools for this project the code..."
+    - sudo apt install -y nodejs docker.io
+    - sudo snap install kubectl --classic
+    - sudo apt install -y npm
+    - sudo usermod -aG docker $USER && newgrp docker
+    - wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+    - echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+    - sudo apt update -y
+    - sudo apt -y install trivy
+    - echo "Compile complete."
+  tags:
+    - self_hosted
+
+# unit-test-job:   # This job runs in the test stage.
+#   stage: test    # It only starts when the job in the build stage completes successfully.
+#   script:
+#     - echo "Running unit tests... This will take about 60 seconds."
+#     - sleep 60
+#     - echo "Code coverage is 90%"
+
+code-test-job:   # This job also runs in the test stage.
+  stage: test    # It can run at the same time as unit-test-job (in parallel).
+  script:
+    - echo "Trivy code... This will take about 10 seconds."
+    - trivy fs --format table -o repo_report.html .
+    - sleep 10
+  artifacts:
+    paths:
+      - testing/
+    when: on_success
+    access: all
+    expire_in: 7 days
+  tags:
+     - self_hosted
+
+docker_build_images:      # This job runs in the docker stage.
+  stage: docker_image_build  
+  script:
+    - echo "Docker image build frontend application..."
+    - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+    - echo frontend docker images
+    - cd /home/azureuser/builds/pqvC8ReBr/0/17J/Restaurant-MERN/client/
+    - docker build -t frontend .
+    - docker tag frontend 17rj/frontend-restaurant-mern
+    - docker push 17rj/frontend-restaurant-mern
+    - cd /home/azureuser/builds/pqvC8ReBr/0/17J/Restaurant-MERN/server/
+    - docker build -t backend .
+    - docker tag backend 17rj/backend-restaurant-mern
+    - docker push 17rj/backend-restaurant-mern
+    - echo "docker images push successfully."
+  tags:
+    - self_hosted
+
+deploy-to-aks:
+  stage: deploy_aks_cluster
+  before_script:
+    - sudo apt install -y jq
+    - curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+    - CLIENT_ID=$(echo "$AZURE_CREDENTIALS" | jq -r .clientId)
+    - CLIENT_SECRET=$(echo "$AZURE_CREDENTIALS" | jq -r .clientSecret)
+    - TENANT_ID=$(echo "$AZURE_CREDENTIALS" | jq -r .tenantId)
+    - SUBSCRIPTION_ID=$(echo "$AZURE_CREDENTIALS" | jq -r .subscriptionId)
+    - az login --service-principal --username "$CLIENT_ID" --password "$CLIENT_SECRET" --tenant "$TENANT_ID"
+    - az account set --subscription "$SUBSCRIPTION_ID"
+    - az aks get-credentials --resource-group "$AKS_RESOURCE_GROUP" --name "$AKS_CLUSTER_NAME" --overwrite-existing
+  script:
+    - echo "Deploying to AKS cluster..."
+    - cd /home/azureuser/builds/pqvC8ReBr/0/17J/Restaurant-MERN/
+    - kubectl apply -n "$KUBE_NAMESPACE" -f ./K8s/
+    - echo "Application successfully deployed."
+  tags:
+    - self_hosted
