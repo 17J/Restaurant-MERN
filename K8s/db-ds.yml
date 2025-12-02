@@ -1,11 +1,11 @@
-# 1. StatefulSet (Deployment ki jagah)
+# 1. StatefulSet
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: mongo
 spec:
-  serviceName: mongo-headless     # ← Yeh line zaroori hai!
-  replicas: 3                     # Replica set ke liye
+  serviceName: mongo-headless     
+  replicas: 3                    
   selector:
     matchLabels:
       app: mongo
@@ -41,16 +41,16 @@ spec:
       resources:
         requests:
           storage: 10Gi
-      storageClassName: gp3  # ya jo bhi tu use kar raha
+      storageClassName: gp3  
 
 ---
-# 2. Headless Service (Normal Service nahi!)
+# 2. Headless Service
 apiVersion: v1
 kind: Service
 metadata:
   name: mongo-headless
 spec:
-  clusterIP: None                 # ← Headless banane ke liye yeh zaroori
+  clusterIP: None                 
   selector:
     app: mongo
   ports:
@@ -58,11 +58,11 @@ spec:
     targetPort: 27017
 
 ---
-# 3. Normal Service bhi bana (app connect karega isse)
+# 3.
 apiVersion: v1
 kind: Service
 metadata:
-  name: mongo-service           # App isko use karega
+  name: mongo-service           
 spec:
   selector:
     app: mongo
