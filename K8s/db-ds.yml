@@ -1,42 +1,71 @@
----
-# Mongo Deployment 
+# 1. StatefulSet (Deployment ki jagah)
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: mongo
 spec:
+  serviceName: mongo-headless     # ← Yeh line zaroori hai!
+  replicas: 3                     # Replica set ke liye
   selector:
     matchLabels:
       app: mongo
-  strategy:
-    type: Recreate
   template:
     metadata:
       labels:
         app: mongo
     spec:
       containers:
-      - image: mongo:8
-        name: mongo
-        env:
-        - name: MONGO_INITDB_ROOT_USERNAME
-          value: "root"
-        - name: MONGO_INITDB_ROOT_PASSWORD
-          value: "Test@123"
-        - name: MONGO_INITDB_DATABASE
-          value: "foodmore"
+      - name: mongo
+        image: mongo:8
         ports:
         - containerPort: 27017
-          name: mongo
+        env:
+        - name: MONGO_INITDB_ROOT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: mongo-secret
+              key: username
+        - name: MONGO_INITDB_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mongo-secret
+              key: password
+        volumeMounts:
+        - name: mongo-data
+          mountPath: /data/db
+  volumeClaimTemplates:
+  - metadata:
+      name: mongo-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 10Gi
+      storageClassName: gp3  # ya jo bhi tu use kar raha
+
 ---
-# Mongo Service 
+# 2. Headless Service (Normal Service nahi!)
 apiVersion: v1
 kind: Service
 metadata:
-  name: mongo-service
+  name: mongo-headless
 spec:
+  clusterIP: None                 # ← Headless banane ke liye yeh zaroori
+  selector:
+    app: mongo
   ports:
   - port: 27017
     targetPort: 27017
+
+---
+# 3. Normal Service bhi bana (app connect karega isse)
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo-service           # App isko use karega
+spec:
   selector:
     app: mongo
+  ports:
+  - port: 27017
+    targetPort: 27017
