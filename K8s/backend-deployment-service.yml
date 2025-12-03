@@ -1,44 +1,106 @@
+---
+# =========================================================================
+#  BACKEND DEPLOYMENT (NODE/EXPRESS - Production Grade)
+# Node.js backend handling API requests.
+# =========================================================================
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: backend-deployment
-  # namespace: default # Replace with your namespace
   labels:
     app: backend
+    environment: production
 spec:
-  replicas: 1 # Adjust as needed
+  replicas: 3 # High availability
   selector:
     matchLabels:
       app: backend
+  strategy:
+    type: RollingUpdate
   template:
     metadata:
       labels:
         app: backend
+        version: v1.0.0 # Istio readiness label
     spec:
+      terminationGracePeriodSeconds: 30
       containers:
         - name: backend-container
-          image: 17rj/backend-restaurant-mern:latest # Replace with your backend image
+          image: 17rj/backend-restaurant-mern:v1.0.0 # Use specific tags
           ports:
-            - containerPort: 5000 # Your backend server port
+            - containerPort: 5000
+
+          # Resource Management for Node.js
+          resources:
+            requests:
+              cpu: "150m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+
           env:
-            - name: NODE_ENV
-              value: "development"
+            # PORT from ConfigMap
             - name: PORT
-              value: "5000"
+              valueFrom:
+                configMapKeyRef:
+                  name: mern-app-config
+                  key: backend-port
+            # NODE_ENV from ConfigMap
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: mern-app-config
+                  key: node-env
+            # MONGO_URI from ConfigMap
             - name: MONGO_URI
-              value: "mongodb://mongo-service:27017/"
-            - name: JWT_SECRET
-              value: "eyJhbGciOiJIUzI1NiJ9.eyJSb2xlIjoiQWRtaW4iLCJJc3N1ZXIiOiJJc3N1ZXIiLCJVc2VybmFtZSI6IkphdmFJblVzZSIsImV4cCI6MTc0NDg2NjA3NCwiaWF0IjoxNzQ0ODY2MDc0fQ.fsUmxSXP_tEYjmV6d_-wcykDeLRUd2bThNEOBb7NhcU"
-            - name: JWT_EXPIRES_IN
-              value: "7d"
+              valueFrom:
+                configMapKeyRef:
+                  name: mern-app-config
+                  key: mongo-uri
+            # DB_NAME from ConfigMap
             - name: DB_NAME
-              value: "foodmore"
+              valueFrom:
+                configMapKeyRef:
+                  name: mern-app-config
+                  key: db-name
+            # JWT_SECRET from Secret
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: mern-app-secrets
+                  key: jwt-secret
+            # JWT_EXPIRES_IN from ConfigMap
+            - name: JWT_EXPIRES_IN
+              valueFrom:
+                configMapKeyRef:
+                  name: mern-app-config
+                  key: jwt-expires-in
+
+          # Health Probes for Node.js API
+          livenessProbe:
+            httpGet:
+              path: /health # Assuming you have a /health endpoint
+              port: 5000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 2
+
 ---
+#  BACKEND SERVICE (ClusterIP)
+# Internal service for the Frontend to communicate with the Backend API.
 apiVersion: v1
 kind: Service
 metadata:
   name: backend-service
-  # namespace: <your-namespace> # Replace with your namespace
   labels:
     app: backend
 spec:
@@ -48,4 +110,4 @@ spec:
     - protocol: TCP
       port: 5000
       targetPort: 5000
-  type: ClusterIP # Accessible only within the cluster
+  type: ClusterIP

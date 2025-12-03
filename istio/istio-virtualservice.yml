@@ -1,0 +1,57 @@
+# =========================================================================
+# ISTIO VIRTUAL SERVICE (Traffic Routing)
+# Defines the rules for routing traffic from the Gateway to the correct service version.
+# =========================================================================
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: mern-virtual-service
+spec:
+  # Apply rules to traffic coming through the Gateway AND internal mesh traffic
+  gateways:
+    - mern-app-gateway
+    - mesh
+
+  hosts:
+    - "*" # Apply to all hostnames
+
+  http:
+    # Rule A: FRONTEND ROUTING (Catch-all for all public UI requests)
+    - name: frontend-route
+      match:
+        - uri:
+            prefix: "/"
+      route:
+        # --- INITIAL STATE: 100% TRAFFIC TO V1 (STABLE) ---
+        - destination:
+            host: frontend-service
+            subset: v1
+          weight: 100
+
+        # --- BLUE/GREEN SWITCHING LOGIC (Commented Out) ---
+        # To switch traffic to v2, uncomment the block below and set v1 weight to 0.
+        # - destination:
+        #     host: frontend-service
+        #     subset: v2
+        #   weight: 0
+
+    # Rule B: BACKEND API ROUTING (Internal API calls)
+    - name: backend-api-route
+      match:
+        # Match only API calls (based on your VITE_API_URL: ".../api")
+        - uri:
+            prefix: "/api"
+      route:
+        # --- INITIAL STATE: 100% TRAFFIC TO V1 (STABLE) ---
+        - destination:
+            host: backend-service
+            subset: v1
+          weight: 100 # All API traffic goes to the current stable backend
+
+
+        # --- BLUE/GREEN SWITCHING LOGIC (Commented Out) ---
+        # To switch API traffic to v2, uncomment the block below and set v1 weight to 0.
+        # - destination:
+        #     host: backend-service
+        #     subset: v2
+        #   weight: 0
