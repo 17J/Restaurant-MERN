@@ -1,0 +1,51 @@
+# =========================================================================
+#  ISTIO DESTINATION RULES (Define Service Subsets)
+# Defines the available versions (subsets) for both Frontend and Backend services.
+# =========================================================================
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: mern-destination-rules
+spec:
+  # This rule applies to both services (common metadata)
+  host: "*"
+---
+# DESTINATION RULE FOR FRONTEND SERVICE
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: frontend-dr
+spec:
+  host: frontend-service # Target the Kubernetes Service name
+  subsets:
+    # Stable Environment (Current Stable Version - V1)
+    - name: v1
+      labels:
+        version: v1.0.0 # Matches label in frontend-deployment
+
+    # --- BLUE/GREEN ENVIRONMENT SUBSET (Commented Out) ---
+    # When deploying a new frontend version (Green/v2.0.0), uncomment this.
+    # - name: v2
+    #   labels:
+    #     version: v2.0.0
+
+---
+# DESTINATION RULE FOR BACKEND SERVICE
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: backend-dr
+spec:
+  host: backend-service # Target the Kubernetes Service name
+  subsets:
+    # Stable Environment (Current Stable Version - V1)
+    - name: v1
+      labels:
+        version: v1.0.0 # Matches label in backend-deployment
+
+
+    # --- BLUE/GREEN ENVIRONMENT SUBSET (Commented Out) ---
+    # When deploying a new backend version (Green/v2.0.0), uncomment this.
+    # - name: v2
+    #   labels:
+    #     version: v2.0.0
